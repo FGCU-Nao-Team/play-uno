@@ -44,6 +44,8 @@ def armMovementRight():
 
 
 #Vision window initialization
+
+#Work in Progress
 winVision = Frame(win)
 winVision.pack(side=TOP)
 
@@ -51,7 +53,11 @@ resolution = vision_definitions.kQQVGA
 colorSpace = vision_definitions.kYUVColorSpace
 fps = 20
 
-nameId = camProxy.subscribe("python_GVM")
+nameId = camProxy.subscribe("python_GVM", resolution, colorSpace, fps)
+
+for i in range(0, 20):
+    camProxy.getImageRemote(nameId)
+    time.sleep(0.05)
 
 
 
