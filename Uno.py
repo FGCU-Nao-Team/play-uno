@@ -48,7 +48,7 @@ winVision = Frame(win)
 winVision.pack(side=TOP)
 
 resolution = vision_definitions.kQQVGA
-colorSpace = vision_definitions.KYUVColorSpace
+colorSpace = vision_definitions.kYUVColorSpace
 fps = 20
 
 nameId = camProxy.subscribe("python_GVM")
