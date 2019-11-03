@@ -2,14 +2,17 @@ from naoqi import ALProxy
 import vision_definitions
 import time
 import Tkinter as tk
+import imageio
 from Tkinter import *
+from PIL import Image, ImageTk
 
-IP = "10.100.174.178"
-PORT = 9559
-tts = ALProxy("ALTextToSpeech", IP, PORT)
-print("Connected!")
-motionProxy = ALProxy("ALMotion", IP, PORT)
-camProxy = ALProxy("ALVideoDevice", IP, PORT)
+# IP = "10.100.174.178"
+# PORT = 9559
+# tts = ALProxy("ALTextToSpeech", IP, PORT)
+# print("Connected!")
+# motionProxy = ALProxy("ALMotion", IP, PORT)
+# camProxy = ALProxy("ALVideoDevice", IP, PORT)
+
 
 win = tk.Tk()
 win.geometry("1200x700+30+30")
@@ -42,12 +45,25 @@ def armMovementRight():
 
 
 
+# Vision stream method
+def visionStream(vision_image):
+    # Convert image format to tkinter compatible image
+    frame_image = ImageTk.PhotoImage(image=Image.fromarray(vision_image))
+    # Display image to frame
+    vLabel.frame_image = frame_image
+    vLabel.config(image=frame_image)
+    vLabel.image = frame_image
+    vLabel.after(1, visionStream)
 
 #Vision window initialization
 
 #Work in Progress
+textLabel = Label(win, text="Nao Vision")
+textLabel.pack(side=TOP, pady=10)
 winVision = Frame(win)
 winVision.pack(side=TOP)
+# Label in frame
+vLabel = Label(winVision)
 
 resolution = vision_definitions.kQQVGA
 colorSpace = vision_definitions.kYUVColorSpace
@@ -55,11 +71,13 @@ fps = 20
 
 nameId = camProxy.subscribe("python_GVM", resolution, colorSpace, fps)
 
-for i in range(0, 20):
-    camProxy.getImageRemote(nameId)
-    time.sleep(0.05)
-
-
+# for i in range(0, 20):
+#     image = camProxy.getImageRemote(nameId)
+#     visionStream(image)
+#     time.sleep(0.05)
+if nameId is not None:
+    image = camProxy.getImageRemote(nameId)
+    visionStream(image)
 
 
 
@@ -86,7 +104,7 @@ headRight = tk.Frame(winHead)
 headRight.pack(side=tk.RIGHT)
 
 #Head Up Button setup
-headUpButton = tk.Button(headUp, text="Head Up", bg='white',
+headUpButton = tk.Button(headUp, text="Head Up", bg='black',
                          command=headMovementUp)
 headUpButton.config(height=2, width=10, font='system 15')
 headUpButton.pack(side=TOP, pady=5, padx=5)
@@ -149,5 +167,6 @@ armRightButton = tk.Button(armRight, text="Arm Right", bg='white',
 armRightButton.config(height=2, width=10, font='system 15')
 armRightButton.pack(side=RIGHT, pady=5, padx=5)
 
+# camProxy.unsubscribe()
 #Main window loop
 win.mainloop()
