@@ -4,14 +4,16 @@ import time
 import Tkinter as tk
 import imageio
 from Tkinter import *
+import numpy as np
 from PIL import Image, ImageTk
 
-# IP = "10.100.174.178"
-# PORT = 9559
-# tts = ALProxy("ALTextToSpeech", IP, PORT)
-# print("Connected!")
-# motionProxy = ALProxy("ALMotion", IP, PORT)
-# camProxy = ALProxy("ALVideoDevice", IP, PORT)
+
+IP = "10.100.110.136"
+PORT = 9559
+tts = ALProxy("ALTextToSpeech", IP, PORT)
+print("Connected!")
+motionProxy = ALProxy("ALMotion", IP, PORT)
+camProxy = ALProxy("ALVideoDevice", IP, PORT)
 
 
 win = tk.Tk()
@@ -47,8 +49,10 @@ def armMovementRight():
 
 # Vision stream method
 def visionStream(vision_image):
+    visual = np.asarray(vision_image)
+
     # Convert image format to tkinter compatible image
-    frame_image = ImageTk.PhotoImage(image=Image.fromarray(vision_image))
+    frame_image = ImageTk.PhotoImage(image=vision_image)
     # Display image to frame
     vLabel.frame_image = frame_image
     vLabel.config(image=frame_image)
@@ -69,19 +73,27 @@ resolution = vision_definitions.kQQVGA
 colorSpace = vision_definitions.kYUVColorSpace
 fps = 20
 
-nameId = camProxy.subscribe("python_GVM", resolution, colorSpace, fps)
+nameId = camProxy.subscribe("python_client", resolution, colorSpace, fps)
 
 # for i in range(0, 20):
 #     image = camProxy.getImageRemote(nameId)
 #     visionStream(image)
 #     time.sleep(0.05)
-if nameId is not None:
+camProxy.setResolution(nameId, resolution)
+while True:
     image = camProxy.getImageRemote(nameId)
-    visionStream(image)
+    print image
+    im = Image.frombytes('RGB', (image[0], image[1]), image[6])
+    # im.show()
+    print visionStream(im)
 
 
 
 
+# Text input
+winInput = Frame(win)
+winInput.pack(side=BOTTOM)
+inputField = tk.Entry(winInput)
 
 
 #Head window initialization
