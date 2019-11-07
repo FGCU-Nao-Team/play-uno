@@ -50,7 +50,6 @@ def armMovementRight():
 # Vision stream method
 def visionStream(vision_image):
     visual = np.asarray(vision_image)
-
     # Convert image format to tkinter compatible image
     frame_image = ImageTk.PhotoImage(image=vision_image)
     # Display image to frame
@@ -84,9 +83,9 @@ while True:
     image = camProxy.getImageRemote(nameId)
     print image
     im = Image.frombytes('RGB', (image[0], image[1]), image[6])
-    # im.show()
-    print visionStream(im)
-
+    visionStream(im)
+    im.save("camImage.png", "PNG")
+    im.show()
 
 
 
