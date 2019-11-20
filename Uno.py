@@ -1,6 +1,13 @@
 from naoqi import ALProxy
+import qi
+import argparse
+import sys
+import os
+import time
 import vision_definitions
 import time
+import almath
+import motion
 import Tkinter as tk
 import imageio
 from Tkinter import *
@@ -8,176 +15,339 @@ import numpy as np
 from PIL import Image, ImageTk
 
 
-IP = "10.100.110.136"
+IP = "192.168.0.103"
 PORT = 9559
 tts = ALProxy("ALTextToSpeech", IP, PORT)
-print("Connected!")
 motionProxy = ALProxy("ALMotion", IP, PORT)
 camProxy = ALProxy("ALVideoDevice", IP, PORT)
-
+lifeProxy = ALProxy("ALAutonomousLife", IP, PORT)
+lifeProxy.setAutonomousAbilityEnabled("BackgroundMovement", False)
+motionProxy.wakeUp()
 
 win = tk.Tk()
 win.geometry("1200x700+30+30")
 win.title("NAO plays UNO")
 
-def headMovementUp():
-    print("head moves up")
+Title = Label(win,
+              font='arial 24 bold',
+              text="NAO Networking Project")
+Title.pack()
 
-def headMovementDown():
-    print("head moves down")
+headYaw = 0
+headPitch = 0
+ArmZ = 0
+ArmY = 0
 
-def headMovementLeft():
-    print("head moves left")
 
-def headMovementRight():
-    print("head moves right")
-
-def armMovementUp():
+def armMovementUp(ArmZ):
     print("Arm moves up")
 
-def armMovementDown():
+    ArmZ+=.25
+    motionProxy.setStiffnesses("LArm", 1.0)
+    motionProxy.angleInterpolation(
+        ["LShoulderPitch"],
+        [0.0, -float(ArmZ)],
+        [1, 2],
+        False,
+        _async=True
+    )
+
+
+def armMovementDown(ArmZ):
     print("Arm moves down")
 
-def armMovementLeft():
+    ArmZ +=.25
+    motionProxy.setStiffnesses("LArm", 1.0)
+    motionProxy.angleInterpolation(
+        ["LShoulderPitch"],
+        [0.0, float(ArmZ)],
+        [1, 2],
+        False,
+        _async=True
+    )
+
+
+def armMovementLeft(ArmY):
     print("Arm moves left")
 
-def armMovementRight():
+    ArmY +=.25
+    motionProxy.setStiffnesses("LArm", 1.0)
+    motionProxy.angleInterpolation(
+        ["LShoulderRoll"],
+        [0.0, float(ArmY)],
+        [1, 2],
+        False,
+        _async=True
+    )
+
+
+def armMovementRight(ArmY):
     print("Arm moves right")
 
+    ArmY +=.25
+    motionProxy.setStiffnesses("LArm", 1.0)
+    motionProxy.angleInterpolation(
+        ["LShoulderRoll"],
+        [0.0, -float(ArmY)],
+        [1, 2],
+        False,
+        _async=True
+    )
 
+
+def headMovementUp(headPitch):
+    print("head moves up")
+
+    headPitch+=.25
+    motionProxy.setStiffnesses("Head", 1.0)
+    # Will go to 1.0 then 0 radian  in two seconds
+    motionProxy.angleInterpolation(
+        ["HeadPitch"],
+        [0.0, -float(headPitch)],
+        [1, 2],
+        False,
+        _async=True
+    )
+
+
+def headMovementDown(headPitch):
+    print("head moves down")
+
+    headPitch+=.25
+    motionProxy.setStiffnesses("Head", 1.0)
+    # Will go to 1.0 then 0 radian  in two seconds
+    motionProxy.angleInterpolation(
+        ["HeadPitch"],
+        [0.0, float(headPitch)],
+        [1, 2],
+        False,
+        _async=True
+    )
+
+
+def headMovementLeft(headYaw):
+    print("head moves left")
+
+    headYaw+=.25
+    motionProxy.setStiffnesses("Head", 1.0)
+    # Will go to 1.0 then 0 radian  in two seconds
+    motionProxy.angleInterpolation(
+        ["HeadYaw"],
+        [0.0, float(headYaw)],
+        [1 , 2],
+        False,
+        _async=True
+    )
+
+
+def headMovementRight(headYaw):
+    print("head moves right")
+
+    headYaw+=.25
+    motionProxy.setStiffnesses("Head", 1.0)
+    # Will go to 1.0 then 0 radian  in two seconds
+    motionProxy.angleInterpolation(
+        ["HeadYaw"],
+        [0.0, -float(headYaw)],
+        [1, 2],
+        False,
+        _async=True
+    )
 
 
 # Vision stream method
-def visionStream(vision_image):
-    visual = np.asarray(vision_image)
-    # Convert image format to tkinter compatible image
-    frame_image = ImageTk.PhotoImage(image=vision_image)
-    # Display image to frame
-    vLabel.frame_image = frame_image
-    vLabel.config(image=frame_image)
-    vLabel.image = frame_image
-    vLabel.after(1, visionStream)
+def visionstream():
+    resolution = 2
+    colorspace = 11
+    fps = 1
 
-#Vision window initialization
+    def __getitem__(self, image):
+        return self.image[6]
 
-#Work in Progress
-textLabel = Label(win, text="Nao Vision")
-textLabel.pack(side=TOP, pady=10)
-winVision = Frame(win)
-winVision.pack(side=TOP)
-# Label in frame
-vLabel = Label(winVision)
+    nameid = camProxy.subscribe("python_client", resolution, colorspace, fps)
+    image = camProxy.getImageRemote(nameid)
+    camProxy.unsubscribe(nameid)
 
-resolution = vision_definitions.kQQVGA
-colorSpace = vision_definitions.kYUVColorSpace
-fps = 20
+    imagewidth = image[0]
+    imageheight = image[1]
 
-nameId = camProxy.subscribe("python_client", resolution, colorSpace, fps)
+    im = Image.frombytes('RGB', (imagewidth, imageheight), image[6])
+    im.save('camImage.JPG')
 
-# for i in range(0, 20):
-#     image = camProxy.getImageRemote(nameId)
-#     visionStream(image)
-#     time.sleep(0.05)
-camProxy.setResolution(nameId, resolution)
-while True:
-    image = camProxy.getImageRemote(nameId)
-    print image
-    im = Image.frombytes('RGB', (image[0], image[1]), image[6])
-    visionStream(im)
-    im.save("camImage.png", "PNG")
-    im.show()
+    path2 = 'camImage.JPG'
+    img2 = ImageTk.PhotoImage(Image.open(path2))
+    panel.configure(image=img2)
+    panel.image = img2
+
+    win.after(300, visionstream)
 
 
+# Vision window
+path = 'camImage.JPG'
+img = ImageTk.PhotoImage(Image.open(path))
+panel = Label(win,
+              image=img)
+panel.pack()
 
-# Text input
-winInput = Frame(win)
-winInput.pack(side=BOTTOM)
-inputField = tk.Entry(winInput)
+# Communication function
+def communication():
+    comment = entryText.get()
+    tts.say(comment)
+
+# Communcation fields
+entryText = Entry(win,
+                  text='Communicate with NAO',
+                  background='gray'
+                  )
+entryText.place(x=600, y=650, anchor='s')
+
+ttsbutton = Button(win,
+                   text='Submit',
+                   command=communication
+                   )
+ttsbutton.place(x=735, y=650, anchor='s')
 
 
-#Head window initialization
-winButton = Frame(win)
-winButton.pack(side=BOTTOM)
+# Quit Button
+quitButton = Button(win,
+                    text='Quit',
+                    command=win.quit
+                    )
+quitButton.config(height=2,
+                  width=10,
+                  font='system 15')
+quitButton.place(x=1125, y=25, anchor='ne')
 
-winHead = Frame(winButton)
-winHead.pack(side=LEFT, padx=20)
 
-headUp = tk.Frame(winHead)
-headUp.pack(side=tk.TOP)
+# Head Up Button setup
+headUpButton = tk.Button(win,
+                         text="Head Up",
+                         bg='white',
+                         command=lambda: headMovementUp(headPitch)
+                         )
+headUpButton.config(height=2,
+                    width=10,
+                    font='system 15'
+                    )
+headUpButton.place(x=100,
+                   y=550,
+                   anchor='sw'
+                   )
 
-headDown = tk.Frame(winHead)
-headDown.pack(side=tk.BOTTOM)
 
-headLeft = tk.Frame(winHead)
-headLeft.pack(side=tk.LEFT)
+# Head Down Button setup
+headDownButton = tk.Button(win,
+                           text="Head Down",
+                           bg='white',
+                           command=lambda: headMovementDown(headPitch)
+                           )
+headDownButton.config(height=2,
+                      width=10,
+                      font='system 15'
+                      )
+headDownButton.place(x=100,
+                     y=650,
+                     anchor='sw'
+                     )
 
-headRight = tk.Frame(winHead)
-headRight.pack(side=tk.RIGHT)
 
-#Head Up Button setup
-headUpButton = tk.Button(headUp, text="Head Up", bg='black',
-                         command=headMovementUp)
-headUpButton.config(height=2, width=10, font='system 15')
-headUpButton.pack(side=TOP, pady=5, padx=5)
+# Head Left Button setup
+headLeftButton = tk.Button(win,
+                           text="Head Left",
+                           bg='white',
+                           command=lambda: headMovementLeft(headYaw)
+                           )
+headLeftButton.config(height=2,
+                      width=10,
+                      font='system 15'
+                      )
+headLeftButton.place(x=25,
+                     y=600,
+                     anchor='sw'
+                     )
 
-#Head Down Button setup
-headDownButton = tk.Button(headDown, text="Head Down", bg='white',
-                           command=headMovementDown)
-headDownButton.config(height=2, width=10, font='system 15')
-headDownButton.pack(side=BOTTOM, pady=5, padx=5)
 
-#Head Left Button setup
-headLeftButton = tk.Button(headLeft, text="Head Left", bg='white',
-                           command=headMovementLeft)
-headLeftButton.config(height=2, width=10, font='system 15')
-headLeftButton.pack(side=LEFT, pady=5, padx=5)
+# Head Right Button setup
+headRightButton = tk.Button(win,
+                            text="Head Right",
+                            bg='white',
+                            command=lambda: headMovementRight(headYaw)
+                            )
+headRightButton.config(height=2,
+                       width=10,
+                       font='system 15'
+                       )
+headRightButton.place(x=175,
+                      y=600,
+                      anchor='sw'
+                      )
 
-#Head Right Button setup
-headRightButton = tk.Button(headRight, text="Head Right", bg='white',
-                            command=headMovementRight)
-headRightButton.config(height=2, width=10, font='system 15')
-headRightButton.pack(side=RIGHT, pady=5, padx=5)
 
-#Arm window initialization
-winArm = Frame(winButton)
-winArm.pack(side=RIGHT, padx=20)
+# Arm UP Button setup
+armUpButton = tk.Button(win,
+                        text="Arm Up",
+                        bg='white',
+                        command=lambda: armMovementUp(ArmZ)
+                        )
+armUpButton.config(height=2,
+                   width=10,
+                   font='system 15'
+                   )
+armUpButton.place(x=1100,
+                  y=550,
+                  anchor='se'
+                  )
 
-armUp = tk.Frame(winArm)
-armUp.pack(side=tk.TOP)
 
-armDown = tk.Frame(winArm)
-armDown.pack(side=tk.BOTTOM)
+# Arm Down Button setup
+armDownButton = tk.Button(win,
+                          text="Arm Down",
+                          bg='white',
+                          command=lambda: armMovementDown(ArmZ)
+                          )
+armDownButton.config(height=2,
+                     width=10,
+                     font='system 15'
+                     )
+armDownButton.place(x=1100,
+                    y=650,
+                    anchor='se'
+                    )
 
-armLeft = tk.Frame(winArm)
-armLeft.pack(side=tk.LEFT)
 
-armRight = tk.Frame(winArm)
-armRight.pack(side=tk.RIGHT)
+# Arm Left Button setup
+armLeftButton = tk.Button(win,
+                          text="Arm Left",
+                          bg='white',
+                          command=lambda: armMovementLeft(ArmY)
+                          )
+armLeftButton.config(height=2,
+                     width=10,
+                     font='system 15'
+                     )
+armLeftButton.place(x=1175,
+                    y=600,
+                    anchor='se'
+                    )
 
-#Arm UP Button setup
-armUpButton = tk.Button(armUp, text="Arm Up", bg='white',
-                        command=armMovementUp)
-armUpButton.config(height=2, width=10, font='system 15')
-armUpButton.pack(side=TOP, pady=5, padx=5)
 
-#Arm Down Button setup
-armDownButton = tk.Button(armDown, text="Arm Down", bg='white',
-                          command=armMovementDown)
-armDownButton.config(height=2, width=10, font='system 15')
-armDownButton.pack(side=BOTTOM, pady=5, padx=5)
+# Arm Right Button setup
+armRightButton = tk.Button(win,
+                           text="Arm Right",
+                           bg='white',
+                           command=lambda: armMovementRight(ArmY)
+                           )
+armRightButton.config(height=2,
+                      width=10,
+                      font='system 15'
+                      )
+armRightButton.place(x=1025,
+                     y=600,
+                     anchor='se'
+                     )
 
-#Arm Left Button setup
-armLeftButton = tk.Button(armLeft, text="Arm Left", bg='white',
-                          command=armMovementLeft)
-armLeftButton.config(height=2, width=10, font='system 15')
-armLeftButton.pack(side=LEFT, pady=5, padx=5)
+# call to visionstream() method
+visionstream()
 
-#Arm Right Button setup
-armRightButton = tk.Button(armRight, text="Arm Right", bg='white',
-                           command=armMovementRight)
-armRightButton.config(height=2, width=10, font='system 15')
-armRightButton.pack(side=RIGHT, pady=5, padx=5)
-
-# camProxy.unsubscribe()
-#Main window loop
+# Main window loop
 win.mainloop()
