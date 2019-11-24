@@ -117,7 +117,7 @@ def r_arm_movement_up(r_arm_z, r_elbow_roll):
         _async=True
     )
 
-    r_elbow_roll += .5
+    r_elbow_roll += .3
     motionProxy.angleInterpolation(
         ["RElbowRoll"],
         [float(r_elbow_roll)],
@@ -141,7 +141,7 @@ def r_arm_movement_down(r_arm_z, r_elbow_roll):
         _async=True
     )
 
-    r_elbow_roll += .5
+    r_elbow_roll += .3
     motionProxy.angleInterpolation(
         ["RElbowRoll"],
         [-float(r_elbow_roll)],
@@ -247,7 +247,7 @@ def l_arm_movement_up(l_arm_z, l_elbow_roll):
         _async=True
     )
 
-    l_elbow_roll += .5
+    l_elbow_roll += .3
     motionProxy.angleInterpolation(
         ["LElbowRoll"],
         [-float(l_elbow_roll)],
@@ -271,7 +271,7 @@ def l_arm_movement_down(l_arm_z, l_elbow_roll):
         _async=True
     )
 
-    l_elbow_roll += .5
+    l_elbow_roll += .3
     motionProxy.angleInterpolation(
         ["LElbowRoll"],
         [float(l_elbow_roll)],
